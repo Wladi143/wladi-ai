@@ -10,7 +10,9 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 @app.route("/")
 def start():
     return send_file("index.html")
-
+@app.route("/googleec9551de99885df5.html")
+def google_verifizierung():
+    return send_file("googleec9551de99885df5.html")
 
 @app.route("/chat", methods=["POST"])
 def chat():
