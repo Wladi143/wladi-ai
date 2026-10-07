@@ -88,6 +88,7 @@ header{height:58px;flex:0 0 58px;border-bottom:1px solid var(--line);display:fle
 .roundBtn:hover{background:var(--hover)}
 #sendBtn{background:var(--text);color:var(--bg)}
 #sendBtn:disabled{opacity:.35;cursor:not-allowed}
+#sendBtn.stopMode{opacity:1;background:var(--text);color:var(--bg)}
 #micBtn.listening{background:var(--text);color:var(--bg)}
 
 /* Modals */
@@ -117,6 +118,137 @@ select{border:1px solid var(--line);border-radius:9px;background:var(--panel);co
  #composerWrap{padding:10px 9px 12px}
  header{padding-right:10px}
 }
+
+/* SCHRITT 1: oben links nur das echte Logo */
+.headerLogo{
+  width:48px;
+  height:48px;
+  border-radius:0;
+  background:transparent;
+}
+.headerLogo img{
+  background:transparent;
+  object-fit:contain;
+}
+
+
+/* SCHRITT 2: dauerhaftes, dezentes Hintergrundlogo */
+#chat{
+  position:relative;
+}
+#backgroundLogo{
+  position:fixed;
+  left:50%;
+  top:48%;
+  transform:translate(-50%,-50%);
+  width:min(48vw,560px);
+  height:min(48vw,560px);
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+  z-index:0;
+  opacity:.11;
+  filter:saturate(.8) brightness(.72);
+}
+#backgroundLogo img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+#chatInner{
+  position:relative;
+  z-index:1;
+}
+#welcome{
+  position:relative;
+  z-index:2;
+}
+#welcome p{
+  font-size:20px;
+  color:var(--muted);
+}
+/* Das Hintergrundlogo bleibt sichtbar, auch wenn welcome ausgeblendet wird. */
+@media(max-width:600px){
+  #backgroundLogo{
+    width:78vw;
+    height:78vw;
+    opacity:.10;
+  }
+}
+
+
+/* SCHRITT 4: schlichte Seitenleiste + Pfeil am linken Rand */
+#sideToggle{
+  left:0;top:50%;width:28px;height:54px;
+  border:0;border-radius:0 12px 12px 0;
+  background:transparent;color:var(--muted);
+  transition:left .22s ease,background .18s ease,color .18s ease;
+}
+#sideToggle:hover{background:var(--hover);color:var(--text)}
+#sideToggle .icon{width:18px;height:18px}
+body.sidebar-open #sideToggle{left:calc(var(--sidebar) - 28px)}
+body.sidebar-open #sideToggle .icon{transform:rotate(180deg)}
+#sidebar{padding:14px 10px 12px}
+.sideTop{padding:3px 7px 18px}
+.sideTop .logoBox{width:30px;height:30px;border-radius:8px}
+.sideTitle{font-size:16px}
+.sideBtn{padding:10px 9px;border-radius:9px}
+.sectionLabel{padding-left:9px}
+
+
+/* SCHRITT 5: Seitenleiste fertig */
+#sidebar{
+  background:color-mix(in srgb,var(--panel) 96%,transparent);
+  backdrop-filter:blur(18px);
+}
+.sideTop{border-bottom:1px solid var(--line);margin-bottom:8px}
+.sideBtn{font-size:14px;min-height:42px}
+.sideBtn .icon{width:19px;height:19px;color:var(--muted)}
+.sideBtn:hover .icon{color:var(--text)}
+.sectionLabel{font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+#history{padding:0 1px 8px}
+.historyItem{font-size:14px;padding:9px 10px}
+.sideBottom{margin-top:auto}
+#chatSearch{height:40px;border-radius:11px}
+@media(max-width:600px){
+ #sidebar{width:min(86vw,300px)}
+ body.sidebar-open #sideToggle{left:calc(min(86vw,300px) - 28px)}
+}
+
+
+/* SCHRITT 6: Einstellungen */
+#settingsModal .modal{width:min(600px,100%)}
+#settingsModal .modalHead{font-size:20px}
+#settingsModal .setting{min-height:64px}
+#settingsModal .setting>div:first-child{font-weight:600}
+#settingsModal .setting small{font-weight:400}
+#settingsModal select{min-width:145px}
+#settingsModal .about{
+  margin-top:12px;
+  padding:20px 12px 8px;
+  border-top:1px solid var(--line);
+}
+#settingsModal .about strong{font-size:18px;margin-bottom:3px}
+
+
+/* SCHRITT 7: Chatverwaltung */
+.historyRow{position:relative;display:flex;align-items:center;border-radius:9px}
+.historyRow:hover,.historyRow.active{background:var(--hover)}
+.historyRow .historyItem{flex:1;min-width:0;padding-right:4px}
+.historyRow .historyItem:hover,.historyRow .historyItem.active{background:transparent}
+.historyMore{width:34px;height:34px;flex:0 0 34px;border:0;background:transparent;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--muted);opacity:0}
+.historyRow:hover .historyMore,.historyRow.menu-open .historyMore{opacity:1}
+.historyMore:hover{background:var(--panel2);color:var(--text)}
+.chatMenu{
+ position:fixed;z-index:150;width:170px;padding:5px;background:var(--bg);
+ border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:none
+}
+.chatMenu.open{display:block}
+.chatMenu button{width:100%;border:0;background:transparent;color:var(--text);border-radius:8px;padding:9px 10px;display:flex;gap:9px;align-items:center;cursor:pointer;text-align:left}
+.chatMenu button:hover{background:var(--hover)}
+.chatMenu button.dangerText{color:#e05b5b}
+.pinMark{font-size:12px;color:var(--muted);margin-right:4px}
+
 </style>
 </head>
 <body>
@@ -138,6 +270,11 @@ select{border:1px solid var(--line);border-radius:9px;background:var(--panel);co
  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M5 9v6h4l5 4V5L9 9H5Z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></symbol>
  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 11.5-1.5L20 9M18 16a7 7 0 0 1-11.5 1.5L4 15"/></symbol>
  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+ <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/></symbol>
+ <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+ <symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 4 6 0 1 5 3 3H5l3-3 1-5Z"/><path d="M12 12v8"/></symbol>
+ <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></symbol>
+ <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
 </svg>
 
 <aside id="sidebar">
@@ -160,19 +297,16 @@ select{border:1px solid var(--line);border-radius:9px;background:var(--panel);co
 
 <div id="app">
  <header>
-  <div class="brand">
-   <div class="logoBox"><span>W</span><img src="logo.png" alt=""></div>
-   <span>Wladi AI</span><span class="badge">5</span>
-  </div>
   <div class="spacer"></div>
   <button class="iconBtn" id="headerNew" title="Neuer Chat"><svg class="icon"><use href="#i-new"/></svg></button>
  </header>
 
  <main id="chat">
+  <div id="backgroundLogo" aria-hidden="true">
+   <img src="logo.png" alt="">
+  </div>
   <div id="chatInner">
    <div id="welcome">
-    <div class="logoBox heroLogo"><span>W</span><img src="logo.png" alt=""></div>
-    <h1>Wladi AI</h1>
     <p>Wie kann ich dir helfen?</p>
    </div>
    <div id="messages"></div>
@@ -223,7 +357,7 @@ const chatsKey="wladi-ai-5-chats";
 const defaults={theme:"system",answerLength:"normal",mic:true,speech:true,autoRead:false,history:true,animations:true,voice:""};
 let settings={...defaults,...JSON.parse(localStorage.getItem(settingsKey)||"{}")};
 let chats=settings.history?JSON.parse(localStorage.getItem(chatsKey)||"[]"):[];
-let currentId=null, busy=false, selectedImage=null, recognition=null;
+let currentId=null, busy=false, selectedImage=null, recognition=null, streamController=null;
 
 function icon(n){return `<svg class="icon" aria-hidden="true"><use href="#i-${n}"></use></svg>`}
 function saveSettings(){localStorage.setItem(settingsKey,JSON.stringify(settings))}
@@ -253,12 +387,36 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(s
 
 function renderHistory(filter=""){
  $("#history").innerHTML="";
- chats.filter(c=>c.title.toLowerCase().includes(filter.toLowerCase())).forEach(c=>{
-  let b=document.createElement("button");b.className="historyItem"+(c.id===currentId?" active":"");b.textContent=c.title;
+ let ordered=[...chats].sort((a,b)=>(b.pinned?1:0)-(a.pinned?1:0));
+ ordered.filter(c=>c.title.toLowerCase().includes(filter.toLowerCase())).forEach(c=>{
+  let row=document.createElement("div");row.className="historyRow"+(c.id===currentId?" active":"");
+  let b=document.createElement("button");b.className="historyItem";b.textContent=(c.pinned?"📌 ":"")+c.title;
   b.onclick=()=>{currentId=c.id;renderMessages();renderHistory($("#chatSearch").value);if(innerWidth<1000)document.body.classList.remove("sidebar-open")};
-  $("#history").appendChild(b)
+  let more=document.createElement("button");more.className="historyMore";more.title="Chatoptionen";more.innerHTML=icon("more");
+  more.onclick=e=>{e.stopPropagation();openChatMenu(c,more,row)};
+  row.append(b,more);$("#history").appendChild(row)
  })
 }
+
+let chatMenu=null;
+function closeChatMenu(){chatMenu?.remove();chatMenu=null;document.querySelectorAll(".historyRow").forEach(r=>r.classList.remove("menu-open"))}
+function openChatMenu(c,anchor,row){
+ closeChatMenu();row.classList.add("menu-open");
+ let menu=document.createElement("div");menu.className="chatMenu open";
+ const item=(ico,label,fn,cls="")=>{let b=document.createElement("button");b.className=cls;b.innerHTML=icon(ico)+`<span>${label}</span>`;b.onclick=e=>{e.stopPropagation();fn();closeChatMenu()};return b};
+ menu.append(
+  item("pin",c.pinned?"Nicht mehr anpinnen":"Anpinnen",()=>{c.pinned=!c.pinned;saveChats();renderHistory($("#chatSearch").value)}),
+  item("edit","Umbenennen",()=>{let name=prompt("Neuer Chatname:",c.title);if(name&&name.trim()){c.title=name.trim().slice(0,80);saveChats();renderHistory($("#chatSearch").value)}}),
+  item("trash","Löschen",()=>{if(confirm("Diesen Chat löschen?")){chats=chats.filter(x=>x.id!==c.id);if(currentId===c.id)currentId=null;saveChats();renderMessages();renderHistory($("#chatSearch").value)}},"dangerText")
+ );
+ document.body.appendChild(menu);chatMenu=menu;
+ let r=anchor.getBoundingClientRect(), mw=170, mh=132;
+ menu.style.left=Math.max(8,Math.min(innerWidth-mw-8,r.right-mw))+"px";
+ menu.style.top=Math.max(8,Math.min(innerHeight-mh-8,r.bottom+4))+"px"
+}
+document.addEventListener("click",e=>{if(chatMenu&&!chatMenu.contains(e.target))closeChatMenu()});
+window.addEventListener("resize",closeChatMenu);
+
 function renderMessages(){
  let box=$("#messages");box.innerHTML="";
  let c=currentChat(), msgs=c?c.messages:[];
@@ -315,27 +473,98 @@ async function send(forced=null,showUser=true){
  let raw=(forced??$("#prompt").value).trim();
  if(!raw&&selectedImage){alert("Bildanalyse ist noch nicht aktiviert. Schreib bitte auch eine Nachricht dazu.");return}
  if(!raw)return;
- busy=true;$("#sendBtn").disabled=true;
+
+ busy=true;
+ streamController=new AbortController();
+ $("#sendBtn").disabled=false;
+ $("#sendBtn").classList.add("stopMode");
+ $("#sendBtn").title="Antwort stoppen";
+ $("#sendBtn").innerHTML=icon("stop");
+
  let c=ensureChat();
  if(showUser){
   c.messages.push({role:"user",text:raw});
   if(c.title==="Neuer Chat")c.title=raw.slice(0,38)+(raw.length>38?"…":"");
   addMessageDOM("user",raw);$("#prompt").value="";
  }
+
  clearImage();loading();saveChats();renderHistory($("#chatSearch").value);
+
+ let fullText="";
+ let row=null, messageEl=null;
+
  try{
-  let r=await fetch("/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({frage:answerInstruction(raw)})});
+  let r=await fetch("/chat-stream",{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({frage:answerInstruction(raw)}),
+   signal:streamController.signal
+  });
   if(!r.ok)throw new Error("HTTP "+r.status);
-  let data=await r.json();let text=data.antwort||"Keine Antwort erhalten.";
-  $("#loading")?.remove();c.messages.push({role:"ai",text,question:raw});addMessageDOM("ai",text,true,raw);saveChats();
-  if(settings.speech&&settings.autoRead)speak(text)
+  if(!r.body)throw new Error("Streaming wird nicht unterstützt.");
+
+  $("#loading")?.remove();
+
+  row=document.createElement("div");row.className="msgRow ai";
+  let wrap=document.createElement("div");wrap.className="aiWrap";
+  messageEl=document.createElement("div");messageEl.className="message ai";
+  wrap.appendChild(messageEl);row.appendChild(wrap);
+  $("#messages").appendChild(row);$("#welcome").classList.add("hidden");
+
+  const reader=r.body.getReader();
+  const decoder=new TextDecoder();
+
+  while(true){
+   const {value,done}=await reader.read();
+   if(done)break;
+   let part=decoder.decode(value,{stream:true});
+   fullText+=part;
+   messageEl.textContent=fullText;
+   scrollBottom();
+  }
+
+  fullText+=decoder.decode();
+  messageEl.textContent=fullText;
+
+  if(fullText.trim()){
+   wrap.appendChild(makeActions(fullText.trim(),raw));
+   c.messages.push({role:"ai",text:fullText.trim(),question:raw});
+   saveChats();
+   if(settings.speech&&settings.autoRead)speak(fullText.trim());
+  }
+
  }catch(e){
-  $("#loading")?.remove();let text="Wladi AI konnte gerade keine Verbindung herstellen.";
-  c.messages.push({role:"ai",text,question:raw});addMessageDOM("ai",text,false,raw);saveChats()
- }finally{busy=false;$("#sendBtn").disabled=false;$("#prompt").focus()}
+  $("#loading")?.remove();
+
+  if(e.name==="AbortError"){
+   if(fullText.trim()){
+    let wrap=row?.querySelector(".aiWrap");
+    wrap?.appendChild(makeActions(fullText.trim(),raw));
+    c.messages.push({role:"ai",text:fullText.trim(),question:raw});
+    saveChats();
+   }
+  }else{
+   row?.remove();
+   let err="Wladi AI konnte gerade keine Verbindung herstellen.";
+   c.messages.push({role:"ai",text:err,question:raw});
+   addMessageDOM("ai",err,false,raw);saveChats();
+  }
+ }finally{
+  busy=false;streamController=null;
+  $("#sendBtn").classList.remove("stopMode");
+  $("#sendBtn").title="Senden";
+  $("#sendBtn").innerHTML=icon("send");
+  $("#sendBtn").disabled=false;
+  $("#prompt").focus();
+ }
 }
+
+function stopStreaming(){
+ if(streamController)streamController.abort();
+}
+
 function newChat(){currentId=null;renderMessages();renderHistory();$("#prompt").focus()}
-$("#sendBtn").onclick=()=>send();
+$("#sendBtn").onclick=()=>busy?stopStreaming():send();
 $("#prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
 $("#newChatBtn").onclick=newChat;$("#headerNew").onclick=newChat;
 
