@@ -13,6 +13,11 @@ def start():
     return send_file("index.html")
 
 
+@app.route("/logo.png")
+def logo():
+    return send_file("logo.png")
+
+
 @app.route("/googleec9551de99885df5.html")
 def google_verifizierung():
     return send_file("googleec9551de99885df5.html")
@@ -74,11 +79,9 @@ def chat():
             json=payload(frage, False),
             timeout=60
         )
-
         antwort.raise_for_status()
         ergebnis = antwort.json()
         text = ergebnis["choices"][0]["message"]["content"]
-
         return jsonify({"antwort": text.strip()})
 
     except Exception as fehler:
@@ -94,13 +97,13 @@ def chat_stream():
     frage = daten.get("frage", "").strip()
 
     if not frage:
-        return Response("Schreib mir einfach eine Frage 🙂", mimetype="text/plain")
+        return Response("Schreib mir einfach eine Frage 🙂", content_type="text/plain; charset=utf-8")
 
     if not GROQ_API_KEY:
         return Response(
             "Der API-Key für Wladi AI wurde noch nicht eingerichtet.",
             status=500,
-            mimetype="text/plain"
+            content_type="text/plain; charset=utf-8"
         )
 
     def generate():
@@ -109,7 +112,8 @@ def chat_stream():
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={
                     "Authorization": f"Bearer {GROQ_API_KEY}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Accept": "text/event-stream"
                 },
                 json=payload(frage, True),
                 stream=True,
@@ -117,8 +121,18 @@ def chat_stream():
             ) as antwort:
                 antwort.raise_for_status()
 
-                for line in antwort.iter_lines(decode_unicode=True):
-                    if not line or not line.startswith("data:"):
+                # Bytes selbst als UTF-8 dekodieren, damit Umlaute und Emojis
+                # beim Streaming nicht kaputtgehen.
+                for line in antwort.iter_lines(decode_unicode=False):
+                    if not line:
+                        continue
+
+                    try:
+                        line = line.decode("utf-8")
+                    except UnicodeDecodeError:
+                        line = line.decode("utf-8", errors="replace")
+
+                    if not line.startswith("data:"):
                         continue
 
                     data = line[5:].strip()
@@ -140,9 +154,9 @@ def chat_stream():
 
     return Response(
         stream_with_context(generate()),
-        mimetype="text/plain; charset=utf-8",
+        content_type="text/plain; charset=utf-8",
         headers={
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-transform",
             "X-Accel-Buffering": "no"
         }
     )
