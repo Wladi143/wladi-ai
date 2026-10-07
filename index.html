@@ -482,6 +482,13 @@ async function send(forced=null,showUser=true){
  $("#sendBtn").innerHTML=icon("stop");
 
  let c=ensureChat();
+
+ // Vorherige Nachrichten dieses Chats an Wladi AI mitsenden.
+ let verlauf=c.messages.slice(-20).map(m=>({
+  role:m.role,
+  text:m.text
+ }));
+
  if(showUser){
   c.messages.push({role:"user",text:raw});
   if(c.title==="Neuer Chat")c.title=raw.slice(0,38)+(raw.length>38?"…":"");
@@ -497,7 +504,10 @@ async function send(forced=null,showUser=true){
   let r=await fetch("/chat-stream",{
    method:"POST",
    headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({frage:answerInstruction(raw)}),
+   body:JSON.stringify({
+    frage:answerInstruction(raw),
+    verlauf:verlauf
+   }),
    signal:streamController.signal
   });
   if(!r.ok)throw new Error("HTTP "+r.status);
