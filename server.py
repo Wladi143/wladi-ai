@@ -43,13 +43,39 @@ Regeln:
 """
 
 
-def payload(frage, stream=False):
+def baue_verlauf(verlauf):
+    messages = [{"role": "system", "content": SYSTEM_TEXT}]
+
+    if isinstance(verlauf, list):
+        for eintrag in verlauf[-20:]:
+            if not isinstance(eintrag, dict):
+                continue
+
+            rolle = eintrag.get("role")
+            text = eintrag.get("text", "")
+
+            if rolle not in ("user", "ai") or not isinstance(text, str):
+                continue
+
+            text = text.strip()
+            if not text:
+                continue
+
+            messages.append({
+                "role": "assistant" if rolle == "ai" else "user",
+                "content": text[:6000]
+            })
+
+    return messages
+
+
+def payload(frage, stream=False, verlauf=None):
+    messages = baue_verlauf(verlauf)
+    messages.append({"role": "user", "content": frage})
+
     return {
         "model": "openai/gpt-oss-20b",
-        "messages": [
-            {"role": "system", "content": SYSTEM_TEXT},
-            {"role": "user", "content": frage}
-        ],
+        "messages": messages,
         "temperature": 0.7,
         "max_tokens": 500,
         "stream": stream
@@ -60,6 +86,7 @@ def payload(frage, stream=False):
 def chat():
     daten = request.get_json(silent=True) or {}
     frage = daten.get("frage", "").strip()
+    verlauf = daten.get("verlauf", [])
 
     if not frage:
         return jsonify({"antwort": "Schreib mir einfach eine Frage 🙂"})
@@ -76,7 +103,7 @@ def chat():
                 "Authorization": f"Bearer {GROQ_API_KEY}",
                 "Content-Type": "application/json"
             },
-            json=payload(frage, False),
+            json=payload(frage, False, verlauf),
             timeout=60
         )
         antwort.raise_for_status()
@@ -95,6 +122,7 @@ def chat():
 def chat_stream():
     daten = request.get_json(silent=True) or {}
     frage = daten.get("frage", "").strip()
+    verlauf = daten.get("verlauf", [])
 
     if not frage:
         return Response("Schreib mir einfach eine Frage 🙂", content_type="text/plain; charset=utf-8")
@@ -115,7 +143,7 @@ def chat_stream():
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream"
                 },
-                json=payload(frage, True),
+                json=payload(frage, True, verlauf),
                 stream=True,
                 timeout=60
             ) as antwort:
