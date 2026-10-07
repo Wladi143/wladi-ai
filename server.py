@@ -43,8 +43,24 @@ Regeln:
 """
 
 
-def baue_verlauf(verlauf):
-    messages = [{"role": "system", "content": SYSTEM_TEXT}]
+def baue_verlauf(verlauf, memory=None):
+    system_text = SYSTEM_TEXT
+
+    if isinstance(memory, list) and memory:
+        erinnerungen = []
+        for eintrag in memory[-30:]:
+            if isinstance(eintrag, str) and eintrag.strip():
+                erinnerungen.append("- " + eintrag.strip()[:500])
+
+        if erinnerungen:
+            system_text += """
+
+Gespeicherte Erinnerungen über den Nutzer:
+""" + "\n".join(erinnerungen) + """
+Nutze diese Erinnerungen nur, wenn sie zur aktuellen Frage passen.
+"""
+
+    messages = [{"role": "system", "content": system_text}]
 
     if isinstance(verlauf, list):
         for eintrag in verlauf[-20:]:
@@ -69,8 +85,8 @@ def baue_verlauf(verlauf):
     return messages
 
 
-def payload(frage, stream=False, verlauf=None):
-    messages = baue_verlauf(verlauf)
+def payload(frage, stream=False, verlauf=None, memory=None):
+    messages = baue_verlauf(verlauf, memory)
     messages.append({"role": "user", "content": frage})
 
     return {
@@ -87,6 +103,7 @@ def chat():
     daten = request.get_json(silent=True) or {}
     frage = daten.get("frage", "").strip()
     verlauf = daten.get("verlauf", [])
+    memory = daten.get("memory", [])
 
     if not frage:
         return jsonify({"antwort": "Schreib mir einfach eine Frage 🙂"})
@@ -103,7 +120,7 @@ def chat():
                 "Authorization": f"Bearer {GROQ_API_KEY}",
                 "Content-Type": "application/json"
             },
-            json=payload(frage, False, verlauf),
+            json=payload(frage, False, verlauf, memory),
             timeout=60
         )
         antwort.raise_for_status()
@@ -123,6 +140,7 @@ def chat_stream():
     daten = request.get_json(silent=True) or {}
     frage = daten.get("frage", "").strip()
     verlauf = daten.get("verlauf", [])
+    memory = daten.get("memory", [])
 
     if not frage:
         return Response("Schreib mir einfach eine Frage 🙂", content_type="text/plain; charset=utf-8")
@@ -143,7 +161,7 @@ def chat_stream():
                     "Content-Type": "application/json",
                     "Accept": "text/event-stream"
                 },
-                json=payload(frage, True, verlauf),
+                json=payload(frage, True, verlauf, memory),
                 stream=True,
                 timeout=60
             ) as antwort:

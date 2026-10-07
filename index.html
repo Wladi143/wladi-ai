@@ -354,14 +354,30 @@ body.sidebar-open #sideToggle .icon{transform:rotate(180deg)}
 const $=s=>document.querySelector(s);
 const settingsKey="wladi-ai-5-settings";
 const chatsKey="wladi-ai-5-chats";
+const memoryKey="wladi-ai-5-memory";
 const defaults={theme:"system",answerLength:"normal",mic:true,speech:true,autoRead:false,history:true,animations:true,voice:""};
 let settings={...defaults,...JSON.parse(localStorage.getItem(settingsKey)||"{}")};
 let chats=settings.history?JSON.parse(localStorage.getItem(chatsKey)||"[]"):[];
 let currentId=null, busy=false, selectedImage=null, recognition=null, streamController=null;
+let memory=JSON.parse(localStorage.getItem(memoryKey)||"[]");
+if(!Array.isArray(memory)) memory=[];
 
 function icon(n){return `<svg class="icon" aria-hidden="true"><use href="#i-${n}"></use></svg>`}
 function saveSettings(){localStorage.setItem(settingsKey,JSON.stringify(settings))}
 function saveChats(){if(settings.history)localStorage.setItem(chatsKey,JSON.stringify(chats));else localStorage.removeItem(chatsKey)}
+function saveMemory(){localStorage.setItem(memoryKey,JSON.stringify(memory))}
+function learnMemory(text){
+ let t=(text||"").trim(), fact="", m;
+ if((m=t.match(/mein(?:e)?\s+(.{2,35}?)\s+ist\s+(.+)/i))) fact=`Mein ${m[1].trim()} ist ${m[2].trim()}`;
+ else if((m=t.match(/(?:ich heiße|ich heisse|mein name ist)\s+(.+)/i))) fact=`Mein Name ist ${m[1].trim()}`;
+ else if((m=t.match(/(?:nenn mich|nenne mich)\s+(.+)/i))) fact=`Nenne mich ${m[1].trim()}`;
+ else if((m=t.match(/ich mag\s+(.+)/i))) fact=`Ich mag ${m[1].trim()}`;
+ if(!fact)return;
+ fact=fact.replace(/[.!?]+$/,"").slice(0,500);
+ if(!memory.some(x=>x.toLowerCase()===fact.toLowerCase())){
+   memory.push(fact); memory=memory.slice(-30); saveMemory();
+ }
+}
 function currentChat(){return chats.find(c=>c.id===currentId)}
 function ensureChat(){
  let c=currentChat();
@@ -490,6 +506,7 @@ async function send(forced=null,showUser=true){
  }));
 
  if(showUser){
+  learnMemory(raw);
   c.messages.push({role:"user",text:raw});
   if(c.title==="Neuer Chat")c.title=raw.slice(0,38)+(raw.length>38?"…":"");
   addMessageDOM("user",raw);$("#prompt").value="";
@@ -506,7 +523,8 @@ async function send(forced=null,showUser=true){
    headers:{"Content-Type":"application/json"},
    body:JSON.stringify({
     frage:answerInstruction(raw),
-    verlauf:verlauf
+    verlauf:verlauf,
+    memory:memory
    }),
    signal:streamController.signal
   });
