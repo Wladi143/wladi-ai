@@ -2,10 +2,53 @@ from flask import Flask, request, jsonify, send_file, Response, stream_with_cont
 import requests
 import os
 import json
+import sqlite3
+from datetime import datetime
 
 app = Flask(__name__)
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+
+
+DB_PATH = os.environ.get("WLADI_DB_PATH", "wladi_ai.db")
+
+def db_verbindung():
+    db = sqlite3.connect(DB_PATH)
+    db.row_factory = sqlite3.Row
+    return db
+
+def datenbank_starten():
+    with db_verbindung() as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS memories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                text TEXT NOT NULL UNIQUE,
+                created_at TEXT NOT NULL
+            )
+        """)
+        db.commit()
+
+def memories_laden(limit=30):
+    with db_verbindung() as db:
+        rows = db.execute(
+            "SELECT text FROM memories ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+    return [row["text"] for row in reversed(rows)]
+
+def memory_speichern(text):
+    if not isinstance(text, str):
+        return
+    text = text.strip()[:500]
+    if not text:
+        return
+    with db_verbindung() as db:
+        db.execute(
+            "INSERT OR IGNORE INTO memories (text, created_at) VALUES (?, ?)",
+            (text, datetime.utcnow().isoformat(timespec="seconds"))
+        )
+        db.commit()
+
+datenbank_starten()
 
 
 @app.route("/")
@@ -103,7 +146,11 @@ def chat():
     daten = request.get_json(silent=True) or {}
     frage = daten.get("frage", "").strip()
     verlauf = daten.get("verlauf", [])
-    memory = daten.get("memory", [])
+    browser_memory = daten.get("memory", [])
+    if isinstance(browser_memory, list):
+        for eintrag in browser_memory[-30:]:
+            memory_speichern(eintrag)
+    memory = memories_laden()
 
     if not frage:
         return jsonify({"antwort": "Schreib mir einfach eine Frage 🙂"})
@@ -140,7 +187,11 @@ def chat_stream():
     daten = request.get_json(silent=True) or {}
     frage = daten.get("frage", "").strip()
     verlauf = daten.get("verlauf", [])
-    memory = daten.get("memory", [])
+    browser_memory = daten.get("memory", [])
+    if isinstance(browser_memory, list):
+        for eintrag in browser_memory[-30:]:
+            memory_speichern(eintrag)
+    memory = memories_laden()
 
     if not frage:
         return Response("Schreib mir einfach eine Frage 🙂", content_type="text/plain; charset=utf-8")
